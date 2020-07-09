@@ -20,8 +20,8 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         super.viewDidLoad()
         
         imagePicker.delegate = self
-        //imagePicker.sourceType = .camera
-        imagePicker.sourceType = .photoLibrary
+        imagePicker.sourceType = .camera
+        //imagePicker.sourceType = .photoLibrary
         imagePicker.allowsEditing = false
     }
     
@@ -30,6 +30,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         if let userPickedImage = info[UIImagePickerController.InfoKey.originalImage] as? UIImage {
             imageView.image = userPickedImage
             
+            // Convert image
             guard let ciimage = CIImage(image: userPickedImage) else {
                 fatalError("Could not convert to CIImage.")
             }
@@ -40,6 +41,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     }
     
     func detect(image: CIImage) {
+        // Load the model, create a request to classify the model
         guard let model = try? VNCoreMLModel(for: Inceptionv3().model) else {
             fatalError("Loading CoreML model failed.")
         }
@@ -48,8 +50,17 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
             guard let results = request.results as? [VNClassificationObservation] else {
                 fatalError("Model failed to process image.")
             }
-            print(results)
+            //print(results)
+            // Check results for the 1st item = usually the one with the highest confidence level.
+            if let firstResult = results.first {
+                if firstResult.identifier.contains("hotdog") {
+                    self.navigationItem.title = "Hot Dog!"
+                } else {
+                    self.navigationItem.title = "Not Hot Dog!"
+                }
+            }
         }
+        // Use handler to perform the request of classifying the image
         let handler = VNImageRequestHandler(ciImage: image)
         do {
             try handler.perform([request])
